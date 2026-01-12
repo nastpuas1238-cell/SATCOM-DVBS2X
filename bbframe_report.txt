@@ -1,0 +1,221 @@
+DVB-S2 BASEBAND FRAME PROCESSING REPORT
+Generated on: 2026-01-05 15:07:30.123063
+
+This report documents step-by-step processing
+from input bitstream to BBFRAME output.
+
+
+============================================================
+INPUT DATA
+============================================================
+Input CSV file : C:\Users\umair\Videos\JOB - NASTP\SATCOM\Code\GS_data\umair_gs_bits.csv
+Total bits     : 720
+First input bits:
+  Length : 720 bits
+  Bits   : 0100011101010101010011010100000101001001010100100100011101010101 ...
+
+
+============================================================
+CONFIGURATION
+============================================================
+Stream type    : TS
+FECFRAME       : short
+UPL            : 1504 bits
+DFL            : 100 bits
+Roll-off alpha : 0.35
+SYNC byte      : 0x47
+
+
+============================================================
+FINAL BBFRAME
+============================================================
+BBFRAME:
+  Length : 180 bits
+  Bits   : 1111000000000000000001011110000000000000011001000100011100000000 ...
+
+BBFRAME length : 180 bits
+
+============================================================
+STREAM ADAPTATION
+============================================================
+BBFRAME index   : 1
+Padding applied : 6852 bits
+Padding bits (first view):
+  Length : 6852 bits
+  Bits   : 0000000000000000000000000000000000000000000000000000000000000000 ...
+
+Padding + BB Scrambling applied
+Final BBFRAME length: 7032 bits (Kbch=7032)
+Scrambled BBFRAME (first 64 bits):
+  Length : 7032 bits
+  Bits   : 1111000101010010000000100000110000010000000011000010011001110001 ...
+
+
+============================================================
+MERGER / SLICER (ETSI CLAUSE 5.1.5)
+============================================================
+DATA FIELD length (DFL): 100 bits
+DATA FIELD (DF):
+  Length : 100 bits
+  Bits   : 0111010101010100110101000001010010010101001001000111010101010100 ...
+
+
+============================================================
+BBHEADER (ETSI CLAUSE 5.1.6)
+============================================================
+BBHEADER:
+  Length : 80 bits
+  Bits   : 1111000000000000000001011110000000000000011001000100011111111111 ...
+
+MATYPE-1 : 0xF0
+UPL      : 1504
+DFL      : 100
+SYNC     : 0x47
+SYNCD    : 65535
+
+
+============================================================
+STREAM ADAPTATION
+============================================================
+BBFRAME index   : 2
+Padding applied : 6852 bits
+Padding bits (first view):
+  Length : 6852 bits
+  Bits   : 0000000000000000000000000000000000000000000000000000000000000000 ...
+
+Padding + BB Scrambling applied
+Final BBFRAME length: 7032 bits (Kbch=7032)
+Scrambled BBFRAME (first 64 bits):
+  Length : 7032 bits
+  Bits   : 1111000101010010000000100000110000010000000011000010011010001110 ...
+
+
+============================================================
+STREAM ADAPTATION
+============================================================
+BBFRAME index   : 3
+Padding applied : 6852 bits
+Padding bits (first view):
+  Length : 6852 bits
+  Bits   : 0000000000000000000000000000000000000000000000000000000000000000 ...
+
+Padding + BB Scrambling applied
+Final BBFRAME length: 7032 bits (Kbch=7032)
+Scrambled BBFRAME (first 64 bits):
+  Length : 7032 bits
+  Bits   : 1111000101010010000000100000110000010000000011000010011010001110 ...
+
+
+============================================================
+STREAM ADAPTATION
+============================================================
+BBFRAME index   : 4
+Padding applied : 6852 bits
+Padding bits (first view):
+  Length : 6852 bits
+  Bits   : 0000000000000000000000000000000000000000000000000000000000000000 ...
+
+Padding + BB Scrambling applied
+Final BBFRAME length: 7032 bits (Kbch=7032)
+Scrambled BBFRAME (first 64 bits):
+  Length : 7032 bits
+  Bits   : 1111000101010010000000100000110000010000000011000010011010001110 ...
+
+
+============================================================
+STREAM ADAPTATION
+============================================================
+BBFRAME index   : 5
+Padding applied : 6852 bits
+Padding bits (first view):
+  Length : 6852 bits
+  Bits   : 0000000000000000000000000000000000000000000000000000000000000000 ...
+
+Padding + BB Scrambling applied
+Final BBFRAME length: 7032 bits (Kbch=7032)
+Scrambled BBFRAME (first 64 bits):
+  Length : 7032 bits
+  Bits   : 1111000101010010000000100000110000010000000011000010011010001110 ...
+
+
+============================================================
+STREAM ADAPTATION
+============================================================
+BBFRAME index   : 6
+Padding applied : 6852 bits
+Padding bits (first view):
+  Length : 6852 bits
+  Bits   : 0000000000000000000000000000000000000000000000000000000000000000 ...
+
+Padding + BB Scrambling applied
+Final BBFRAME length: 7032 bits (Kbch=7032)
+Scrambled BBFRAME (first 64 bits):
+  Length : 7032 bits
+  Bits   : 1111000101010010000000100000110000010000000011000010011010001110 ...
+
+
+============================================================
+STREAM ADAPTATION
+============================================================
+BBFRAME index   : 7
+Padding applied : 6852 bits
+Padding bits (first view):
+  Length : 6852 bits
+  Bits   : 0000000000000000000000000000000000000000000000000000000000000000 ...
+
+Padding + BB Scrambling applied
+Final BBFRAME length: 7032 bits (Kbch=7032)
+Scrambled BBFRAME (first 64 bits):
+  Length : 7032 bits
+  Bits   : 1111000101010010000000100000110000010000000011000010011010001110 ...
+
+
+============================================================
+STREAM ADAPTATION
+============================================================
+BBFRAME index   : 8
+Padding applied : 6852 bits
+Padding bits (first view):
+  Length : 6852 bits
+  Bits   : 0000000000000000000000000000000000000000000000000000000000000000 ...
+
+Padding + BB Scrambling applied
+Final BBFRAME length: 7032 bits (Kbch=7032)
+Scrambled BBFRAME (first 64 bits):
+  Length : 7032 bits
+  Bits   : 1111000101010010000000100000110000010000000011000010011010001110 ...
+
+
+============================================================
+STREAM ADAPTATION
+============================================================
+BBFRAME index   : 9
+Padding applied : 6852 bits
+Padding bits (first view):
+  Length : 6852 bits
+  Bits   : 0000000000000000000000000000000000000000000000000000000000000000 ...
+
+Padding + BB Scrambling applied
+Final BBFRAME length: 7032 bits (Kbch=7032)
+Scrambled BBFRAME (first 64 bits):
+  Length : 7032 bits
+  Bits   : 1111000101010010000000100000110000010000000011000010011010001110 ...
+
+
+============================================================
+STREAM ADAPTATION
+============================================================
+BBFRAME index   : 10
+Padding applied : 6852 bits
+Padding bits (first view):
+  Length : 6852 bits
+  Bits   : 0000000000000000000000000000000000000000000000000000000000000000 ...
+
+Padding + BB Scrambling applied
+Final BBFRAME length: 7032 bits (Kbch=7032)
+Scrambled BBFRAME (first 64 bits):
+  Length : 7032 bits
+  Bits   : 1111000101010010000000100000110000010000000011000010011010001110 ...
+
+
+END OF REPORT
