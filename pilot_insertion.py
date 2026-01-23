@@ -39,10 +39,13 @@ PILOT_PERIOD_SLOTS = 16
 # ETSI-defined pilot sequence (36 symbols).
 # In DVB-S2, pilot symbols are a known π/2-BPSK sequence.
 #
-# A common reference representation is:
-#   p[k] = exp(j * pi/2 * k)  for k=0..35  (i.e., 1, j, -1, -j repeating)
+# ETSI-defined pilot symbols:
+# All 36 pilot symbols are identical π/2-BPSK symbols:
+#   I = +1/sqrt(2), Q = +1/sqrt(2)
 #
-# This matches the "quadrature" pilot pattern used for carrier/phase tracking.
+# The pilots are constant (unmodulated) and are used by the receiver
+# for carrier frequency, phase, and timing recovery.
+
 # (Receiver correlates against this known periodic sequence.)
 # NOTE: Per ETSI, pilots are constant pi/2-BPSK; all 36 symbols identical.
 _P = 1.0 / np.sqrt(2.0)
