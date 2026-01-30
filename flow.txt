@@ -1,0 +1,30 @@
+RX Flow (DVB-S2)
+
+[Rx PLFRAME]
+     |
+     v
+[PL Descramble]  ✔ (rx/pl_descrambler.py)
+     |
+     v
+[Pilot Removal]  ✔ (rx/pilot_removal_rx.py)
+     |
+     v
+[Pilot Phase Correction]  ✔ (rx/pilot_phase_correction.py)
+     |
+     v
+[Constellation Demap → LLRs]  ✔ QPSK/8PSK/16/32 APSK (rx/constellation_demapper.py)
+     |
+     v
+[LLR Deinterleave]  ✔ (common/bit_interleaver.py)
+     |
+     v
+[LDPC Decode]  ◻ Implemented, needs tuning/validation on real frames (rx/ldpc_decoder.py)
+     |
+     v
+[BCH Decode]   ◻ Detect-only; correction pending (rx/bch_decoding.py)
+     |
+     v
+[BB Descramble + Deframe]  ✔ descramble + DF extract (tx/stream_adaptation.py, rx/bb_deframer.py)
+     |
+     v
+[Recovered DF Bits]

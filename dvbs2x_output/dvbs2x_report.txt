@@ -1,0 +1,27 @@
+DVB-S2X TX→RX Report
+====================
+Input bits file      : C:\Users\umair\Videos\JOB - NASTP\SATCOM\Code\GS_data\umair_gs_bits.csv
+Modulation           : QPSK
+Rate                 : 1/2
+FECFRAME             : short
+Pilots               : True
+Scrambling code      : 0
+DFL                  : 720
+LDPC MAT             : C:\Users\umair\Videos\JOB - NASTP\SATCOM\Code\s2xLDPCParityMatrices\dvbs2xLDPCParityMatrices.mat
+
+Lengths:
+DF bits              : 720
+BBFRAME              : 800
+BCH codeword         : 7200
+LDPC codeword        : 16200
+Interleaved bits     : 16200
+Payload symbols      : 8100
+PLFRAME symbols      : 8370
+
+RX stats:
+LDPC iterations      : 0
+LDPC syndrome wgt    : 0
+BCH corrected?       : False
+Recovered DF bits    : 720
+
+Result: PASS (DF match)

@@ -1,9 +1,13 @@
 print("\n========== DVB-S2 TRANSMITTER RUN ==========\n")
 
-import numpy as np
 import os
+import sys
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+import numpy as np
 
-from BB_Frame import (
+from tx.BB_Frame import (
     dvbs2_bbframe_generator_from_bits_csv,
     build_bbheader,
     PacketizedCrc8Stream,
@@ -12,28 +16,28 @@ from BB_Frame import (
     resolve_input_path
 )
 
-from stream_adaptation import (
+from tx.stream_adaptation import (
     get_kbch,
     pad_bbframe_rate,
     save_bbframe_to_file_rate,
     stream_adaptation_rate
 )
 
-from bbframe_report import BBFrameReport
-from bch_encoding import BCH_PARAMS, bch_encode_bbframe
-from ldpc_Encoding import DVB_LDPC_Encoder
+from tx.bbframe_report import BBFrameReport
+from tx.bch_encoding import BCH_PARAMS, bch_encode_bbframe
+from tx.ldpc_Encoding import DVB_LDPC_Encoder
 
-from bit_interleaver import (
+from common.bit_interleaver import (
     dvbs2_bit_interleave,
     dvbs2_bit_deinterleave
 )
 
-from constellation_mapper import dvbs2_constellation_map
-from pl_header import modcod_from_modulation_rate, build_plheader
-from pl_scrambler import pl_scramble_full_plframe
-from pilot_insertion import insert_pilots_into_payload
-from plot_qpsk_fft import plot_qpsk_fft, plot_dvbs2_qpsk_spectrum
-from bb_filter import dvbs2_bb_filter
+from common.constellation_mapper import dvbs2_constellation_map
+from tx.pl_header import modcod_from_modulation_rate, build_plheader
+from common.pl_scrambler import pl_scramble_full_plframe
+from common.pilot_insertion import insert_pilots_into_payload
+from tx.plot_qpsk_fft import plot_qpsk_fft, plot_dvbs2_qpsk_spectrum
+from tx.bb_filter import dvbs2_bb_filter
 
 BITS_CSV_PATH = r"C:\Users\umair\Videos\JOB - NASTP\SATCOM\Code\GS_data\umair_gs_bits.csv"
 MAX_FRAMES    = 3

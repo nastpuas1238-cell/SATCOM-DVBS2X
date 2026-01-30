@@ -8,6 +8,10 @@
 from __future__ import annotations
 
 import os
+import sys
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
 import re
 import numpy as np
 from typing import Dict, Any, Tuple, Optional
@@ -149,6 +153,18 @@ class DVB_LDPC_Decoder:
         hard = np.zeros(n, dtype=np.uint8)
         syndrome_weight = m
         iters_done = 0
+
+        # Early syndrome check on channel LLRs (often already valid when noise is tiny)
+        hard[:] = 0
+        hard[Lch < 0] = 1
+        syn0 = 0
+        for r in range(m):
+            e_idxs = row_edges[r]
+            bits = hard[cols[e_idxs]]
+            if np.bitwise_xor.reduce(bits) != 0:
+                syn0 += 1
+        if syn0 == 0:
+            return hard, {"iterations": 0, "syndrome_weight": 0, "success": True}
 
         for it in range(1, max_iter + 1):
             # Check node update

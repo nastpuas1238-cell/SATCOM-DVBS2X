@@ -1,5 +1,5 @@
 import numpy as np
-from bit_interleaver import dvbs2_bit_interleave, dvbs2_bit_deinterleave, BITS_PER_SYMBOL
+from common.bit_interleaver import dvbs2_bit_interleave, dvbs2_bit_deinterleave, BITS_PER_SYMBOL
 
 
 def test_interleaver_roundtrip():

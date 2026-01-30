@@ -5,11 +5,16 @@
 # =============================================================================
 
 from __future__ import annotations
+import os
+import sys
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
 
 import numpy as np
 from typing import Dict, Any, Tuple
 
-from pilot_insertion import (
+from common.pilot_insertion import (
     SLOT_LEN,
     PILOT_BLOCK_LEN,
     PILOT_PERIOD_SLOTS,

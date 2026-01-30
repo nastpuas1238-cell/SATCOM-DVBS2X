@@ -7,9 +7,14 @@
 # =============================================================================
 
 from __future__ import annotations
+import os
+import sys
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
 import numpy as np
 
-from pl_scrambler import (
+from common.pl_scrambler import (
     cn_sequence,
     _as_complex_1d,
     _validate_scrambling_code,
@@ -87,7 +92,7 @@ def pl_descramble_full_plframe(
 
 def _self_test() -> None:
     # Round-trip sanity: descramble(scramble(x)) == x
-    from pl_scrambler import pl_scramble_full_plframe
+    from common.pl_scrambler import pl_scramble_full_plframe
 
     rng = np.random.default_rng(0)
     x = rng.standard_normal(200) + 1j * rng.standard_normal(200)

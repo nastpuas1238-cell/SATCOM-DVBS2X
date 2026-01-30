@@ -7,17 +7,24 @@ to be added next.
 
 from __future__ import annotations
 
+import os
+import sys
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
 import numpy as np
 from typing import Dict, Any
 
-from pl_descrambler import pl_descramble_full_plframe
-from pilot_removal_rx import remove_pilots_from_plframe
-from pilot_phase_correction import apply_pilot_phase_correction
-from constellation_demapper import dvbs2_constellation_demapper
-from bit_interleaver import dvbs2_llr_deinterleave
-from ldpc_decoder import DVB_LDPC_Decoder
-from bch_decoding import bch_check_and_strip
-from stream_adaptation import stream_deadaptation_rate, BCH_PARAMS
+from rx.pl_descrambler import pl_descramble_full_plframe
+from rx.pilot_removal_rx import remove_pilots_from_plframe
+from rx.pilot_phase_correction import apply_pilot_phase_correction
+from rx.constellation_demapper import dvbs2_constellation_demapper
+from common.bit_interleaver import dvbs2_llr_deinterleave
+from rx.ldpc_decoder import DVB_LDPC_Decoder
+from rx.bch_decoding import bch_check_and_strip
+from tx.stream_adaptation import stream_deadaptation_rate, BCH_PARAMS
+from rx.bb_deframer import deframe_bb
 
 
 def process_rx_plframe(
@@ -63,6 +70,7 @@ def process_rx_plframe(
     llrs, demap_meta = dvbs2_constellation_demapper(
         corrected_payload,
         modulation=modulation,
+        code_rate=rate,
         noise_var=noise_var,
         esn0_db=esn0_db,
     )
@@ -75,6 +83,8 @@ def process_rx_plframe(
     bch_payload = None
     bch_meta = None
     bbframe_padded = None
+    df_bits = None
+    df_meta = None
 
     if decode_ldpc:
         # Step 6: LDPC decode
@@ -98,6 +108,9 @@ def process_rx_plframe(
         # Step 8: BB descramble (padding still present)
         bbframe_padded = stream_deadaptation_rate(bch_payload, fecframe, rate=rate)
 
+        # Step 9: Deframe to recover DF bits (drop padding)
+        df_bits, df_meta = deframe_bb(bbframe_padded, fecframe, rate)
+
     return {
         "payload_corrected": corrected_payload,
         "payload_raw": payload_data,
@@ -113,6 +126,8 @@ def process_rx_plframe(
         "bch_payload": bch_payload,
         "bch_meta": bch_meta,
         "bbframe_padded": bbframe_padded,
+        "df_bits": df_bits,
+        "df_meta": df_meta,
         "rate": rate,
         "descrambled": descrambled,
     }
@@ -122,9 +137,9 @@ def _self_test() -> None:
     """
     Quick loopback using TX pilot insertion to validate removal + correction.
     """
-    from pilot_insertion import insert_pilots_into_payload, PILOT_SYMBOLS_36
-    from pl_scrambler import pl_scramble_full_plframe
-    from pl_header import build_plheader, modcod_from_modulation_rate
+    from common.pilot_insertion import insert_pilots_into_payload, PILOT_SYMBOLS_36
+    from common.pl_scrambler import pl_scramble_full_plframe
+    from tx.pl_header import build_plheader, modcod_from_modulation_rate
 
     rng = np.random.default_rng(1)
     fec = "short"

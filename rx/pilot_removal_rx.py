@@ -13,10 +13,15 @@
 # =============================================================================
 
 from __future__ import annotations
+import os
+import sys
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
 import numpy as np
 from typing import Tuple, Dict, Any
 
-from pilot_insertion import (
+from common.pilot_insertion import (
     SLOT_LEN,
     PILOT_BLOCK_LEN,
     PILOT_PERIOD_SLOTS,
@@ -142,7 +147,7 @@ def remove_pilots_from_plframe(
 
 def _self_test() -> None:
     # Round-trip test against TX insertion (structure only)
-    from pilot_insertion import insert_pilots  # inserts pilots into data-only payload
+    from common.pilot_insertion import insert_pilots  # inserts pilots into data-only payload
 
     rng = np.random.default_rng(0)
     for fec in ["short", "normal"]:

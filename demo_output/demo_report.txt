@@ -1,0 +1,24 @@
+TX->RX Demo Report
+==================
+Modulation : QPSK
+Rate       : 1/2
+FECFRAME   : short
+Pilots     : True
+Scrambling : 0
+
+Lengths:
+DF bits             : 6000
+BBFRAME             : 6080
+BCH codeword        : 7200
+LDPC codeword       : 16200
+Interleaved bits    : 16200
+Payload symbols     : 8100
+PLFRAME symbols     : 8370
+
+RX stats:
+LDPC iterations     : 0
+LDPC syndrome wgt   : 0
+BCH corrected?      : False
+Recovered DF bits   : 6000
+
+Result: PASS (DF match)

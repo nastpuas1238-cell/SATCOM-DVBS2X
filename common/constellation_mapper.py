@@ -309,7 +309,7 @@ def dvbs2_map_from_ldpc_bits(
     Returns:
       (interleaved_bits, symbols)
     """
-    from bit_interleaver import dvbs2_bit_interleave
+    from common.bit_interleaver import dvbs2_bit_interleave
 
     interleaved = dvbs2_bit_interleave(ldpc_bits, mod)
     symbols = dvbs2_constellation_map(

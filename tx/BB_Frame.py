@@ -1,10 +1,14 @@
 print("\n========== SCRIPT START ==========\n")
 
 import os
+import sys
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
 import numpy as np
 import csv
-from bbframe_report import BBFrameReport
-from stream_adaptation import get_kbch, stream_adaptation_rate
+from tx.bbframe_report import BBFrameReport
+from tx.stream_adaptation import get_kbch, stream_adaptation_rate
 
 
 # ============================================================
