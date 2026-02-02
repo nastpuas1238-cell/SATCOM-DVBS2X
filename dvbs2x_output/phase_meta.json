@@ -1,0 +1,6 @@
+{
+  "chunk_len": 1440,
+  "fecframe": "short",
+  "payload_symbols": 8100,
+  "pilot_blocks": 5
+}

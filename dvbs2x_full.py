@@ -11,6 +11,8 @@ import os
 import sys
 import numpy as np
 import json
+import shutil
+from datetime import datetime
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 if ROOT not in sys.path:
@@ -47,28 +49,52 @@ def save_symbols(path: str, syms: np.ndarray) -> None:
             f.write(f"{s.real:+.6f} {s.imag:+.6f}\n")
 
 def save_json(path: str, obj: dict) -> None:
+    def _convert(x):
+        if isinstance(x, np.ndarray):
+            return x.tolist()
+        if isinstance(x, (np.integer, np.floating)):
+            return x.item()
+        return x
+    obj_conv = {k: _convert(v) for k, v in obj.items()} if isinstance(obj, dict) else _convert(obj)
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(obj, f, indent=2, sort_keys=True)
+        json.dump(obj_conv, f, indent=2, sort_keys=True)
+
+def _prompt(msg: str, default: str | None = None) -> str:
+    try:
+        if default is None:
+            return input(msg).strip()
+        val = input(f"{msg} [{default}]: ").strip()
+        return val if val else default
+    except EOFError:
+        # Non-interactive: fall back to default if provided
+        if default is not None:
+            return default
+        raise
+
 
 def run_end_to_end() -> None:
-    # Configuration aligned with tx/run_dvbs2.py defaults
-    BITS_CSV_PATH = r"C:\Users\umair\Videos\JOB - NASTP\SATCOM\Code\GS_data\umair_gs_bits.csv"
-    MAT_PATH = r"C:\Users\umair\Videos\JOB - NASTP\SATCOM\Code\s2xLDPCParityMatrices\dvbs2xLDPCParityMatrices.mat"
-    fecframe = "short"
-    rate = "1/2"
-    modulation = "QPSK"
-    pilots_on = True
-    scrambling_code = 0
-    dfl = 6000  # data field length bits (<= Kbch-80)
-
-    out_dir = ensure_dir(os.path.join(ROOT, "dvbs2x_output"))
+    # Interactive inputs (similar to tx/run_dvbs2.py)
+    bits_csv_path = _prompt("Enter bits CSV path", r"C:\Users\umair\Videos\JOB - NASTP\SATCOM\Code\GS_data\umair_gs_bits.csv")
+    mat_path = _prompt("Enter LDPC MAT path", r"C:\Users\umair\Videos\JOB - NASTP\SATCOM\Code\s2xLDPCParityMatrices\dvbs2xLDPCParityMatrices.mat")
+    stream_type = _prompt("Enter stream type (TS/GS)", "GS").upper()
+    fecframe = _prompt("Enter FECFRAME (normal/short)", "short").lower()
+    rate = _prompt("Enter code rate (e.g., 1/2)", "1/2")
+    modulation = _prompt("Enter modulation (QPSK/8PSK/16APSK/32APSK)", "QPSK").upper()
+    pilots_on = _prompt("Enable pilots (on/off)", "on").lower() in {"on", "yes", "y", "1"}
+    scrambling_code = int(_prompt("Enter PL scrambling code (0..262142)", "0"))
 
     # Load input bits
-    bits_path = resolve_input_path(BITS_CSV_PATH)
+    bits_path = resolve_input_path(bits_csv_path)
     in_bits = load_bits_csv(bits_path)
 
+    # DFL selection
     Kbch = get_kbch(fecframe, rate)
-    dfl = min(dfl, Kbch - 80, in_bits.size)  # safety cap
+    dfl_max = Kbch - 80
+    dfl_in = int(_prompt(f"Enter DFL (<= {min(dfl_max, in_bits.size)} and <= available bits)", str(min(6000, dfl_max, in_bits.size))))
+    dfl = min(dfl_in, dfl_max, in_bits.size)
+
+    out_dir = ensure_dir(os.path.join(ROOT, "dvbs2x_output"))
+    reports_dir = ensure_dir(os.path.join(ROOT, "dvbs2x_reports"))
 
     df_bits = in_bits[:dfl]
 
@@ -90,7 +116,7 @@ def run_end_to_end() -> None:
     bch_codeword = bch_encode_bbframe(scrambled, fecframe, rate)
 
     # LDPC
-    ldpc_encoder = DVB_LDPC_Encoder(MAT_PATH)
+    ldpc_encoder = DVB_LDPC_Encoder(mat_path)
     ldpc_codeword = ldpc_encoder.encode(bch_codeword, fecframe, rate)
 
     # Interleave + map
@@ -191,42 +217,133 @@ def run_end_to_end() -> None:
     }
 
     # Report
+    def _bits_preview(arr: np.ndarray, max_len: int = 128) -> str:
+        bits = "".join("1" if int(b) else "0" for b in arr.reshape(-1))
+        if len(bits) > max_len:
+            return bits[:max_len] + "..."
+        return bits
+
+    def _syms_preview(arr: np.ndarray, count: int = 8) -> str:
+        arr = arr.reshape(-1)
+        return ", ".join(f"{s.real:+.3f}{s.imag:+.3f}j" for s in arr[:count])
+
+    def _bits_full(arr: np.ndarray) -> str:
+        return "".join("1" if int(b) else "0" for b in arr.reshape(-1))
+
+    def _syms_full(arr: np.ndarray) -> str:
+        return ", ".join(f"{s.real:+.6f}{s.imag:+.6f}j" for s in arr.reshape(-1))
+
+    def _floats_full(arr: np.ndarray) -> str:
+        return " ".join(f"{float(x):+.6f}" for x in arr.reshape(-1))
+
     report_path = os.path.join(out_dir, "dvbs2x_report.txt")
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with open(report_path, "w", encoding="utf-8") as f:
-        f.write("DVB-S2X TX→RX Report\n")
-        f.write("====================\n")
-        f.write(f"Input bits file      : {bits_path}\n")
-        f.write(f"Modulation           : {modulation}\n")
-        f.write(f"Rate                 : {rate}\n")
-        f.write(f"FECFRAME             : {fecframe}\n")
-        f.write(f"Pilots               : {pilots_on}\n")
-        f.write(f"Scrambling code      : {scrambling_code}\n")
-        f.write(f"DFL                  : {dfl}\n")
-        f.write(f"LDPC MAT             : {MAT_PATH}\n")
-        f.write("\nLengths:\n")
-        f.write(f"DF bits              : {df_bits.size}\n")
-        f.write(f"BBFRAME              : {BBFRAME.size}\n")
-        f.write(f"BCH codeword         : {bch_codeword.size}\n")
-        f.write(f"LDPC codeword        : {ldpc_codeword.size}\n")
-        f.write(f"Interleaved bits     : {interleaved.size}\n")
-        f.write(f"Payload symbols      : {payload_syms.size}\n")
-        f.write(f"PLFRAME symbols      : {plframe.size}\n")
-        f.write("\nRX stats:\n")
-        f.write(f"LDPC iterations      : {rx_out['ldpc_meta']['iterations']}\n")
-        f.write(f"LDPC syndrome wgt    : {rx_out['ldpc_meta']['syndrome_weight']}\n")
-        f.write(f"BCH corrected?       : {rx_out['bch_meta']['corrected'] if rx_out['bch_meta'] else 'n/a'}\n")
-        f.write(f"Recovered DF bits    : {df_rx.size}\n")
-        f.write("\nResult: PASS (DF match)\n")
-        f.write("\nTX files:\n")
+        f.write("DVB-S2X END-TO-END REPORT\n")
+        f.write(f"Generated on: {now}\n\n")
+        f.write("This report documents TX→RX processing from input bits to recovered DF.\n\n")
+
+        f.write("============================================================\n")
+        f.write("INPUT DATA\n")
+        f.write("============================================================\n")
+        f.write(f"Input CSV file : {bits_path}\n")
+        f.write(f"Total bits     : {in_bits.size}\n")
+        f.write(f"First bits     : {_bits_preview(in_bits)}\n\n")
+
+        f.write("============================================================\n")
+        f.write("BBHEADER (ETSI CLAUSE 5.1.6)\n")
+        f.write("============================================================\n")
+        f.write(f"Length : {BBHEADER.size} bits\n")
+        f.write(f"Bits   : {_bits_preview(BBHEADER, 160)}\n\n")
+        f.write(f"MATYPE-1 : 0x00\n")
+        f.write(f"UPL      : {0 if stream_type=='GS' else 188*8}\n")
+        f.write(f"DFL      : {dfl}\n")
+        f.write(f"SYNC     : 0x00\n")
+        f.write(f"SYNCD    : 0x0000\n\n")
+
+        f.write("============================================================\n")
+        f.write("DATA FIELD (MERGER/SLICER)\n")
+        f.write("============================================================\n")
+        f.write(f"DFL bits : {dfl}\n")
+        f.write(f"DF bits  : {_bits_preview(df_bits)}\n\n")
+
+        f.write("============================================================\n")
+        f.write("STREAM ADAPTATION + BCH + LDPC\n")
+        f.write("============================================================\n")
+        f.write(f"Kbch            : {Kbch}\n")
+        f.write(f"Nbch            : {bch_codeword.size}\n")
+        f.write(f"LDPC length     : {ldpc_codeword.size}\n")
+        f.write(f"Scrambled (1st) : {_bits_preview(scrambled)}\n")
+        f.write(f"BCH cw (1st)    : {_bits_preview(bch_codeword)}\n")
+        f.write(f"LDPC cw (1st)   : {_bits_preview(ldpc_codeword)}\n\n")
+
+        f.write("============================================================\n")
+        f.write("CONSTELLATION + PILOTS + PLFRAME\n")
+        f.write("============================================================\n")
+        f.write(f"Modulation      : {modulation}\n")
+        f.write(f"Rate            : {rate}\n")
+        f.write(f"Pilots          : {pilots_on}\n")
+        f.write(f"Payload symbols : {payload_syms.size}\n")
+        f.write(f"First payload   : {_syms_preview(payload_syms)}\n")
+        f.write(f"PLHEADER symbols: {plh_syms.size}\n")
+        f.write(f"PLFRAME symbols : {plframe.size}\n")
+        f.write(f"First PLFRAME   : {_syms_preview(plframe)}\n\n")
+
+        f.write("============================================================\n")
+        f.write("RECEIVER PIPELINE\n")
+        f.write("============================================================\n")
+        f.write(f"LDPC iterations : {rx_out['ldpc_meta']['iterations']}\n")
+        f.write(f"LDPC syndrome   : {rx_out['ldpc_meta']['syndrome_weight']}\n")
+        f.write(f"BCH corrected?  : {rx_out['bch_meta']['corrected'] if rx_out['bch_meta'] else 'n/a'}\n")
+        f.write(f"Recovered DF    : {df_rx.size} bits\n")
+        f.write(f"DF match        : {'YES' if np.array_equal(df_rx, df_bits) else 'NO'}\n\n")
+
+        f.write("============================================================\n")
+        f.write("RECEIVER INTERMEDIATE DATA (FULL)\n")
+        f.write("============================================================\n")
+        f.write("Payload (raw, post-pilot removal):\n")
+        f.write(_syms_full(rx_out["payload_raw"]) + "\n\n")
+        f.write("Payload (phase-corrected):\n")
+        f.write(_syms_full(rx_out["payload_corrected"]) + "\n\n")
+        f.write("Pilots (extracted):\n")
+        f.write(_syms_full(rx_out["pilots"]) + "\n\n")
+        f.write("Phase estimates (rad):\n")
+        f.write(_floats_full(rx_out["phase_estimates"]) + "\n\n")
+        f.write("LLRs (interleaved):\n")
+        f.write(_floats_full(rx_out["llrs_interleaved"]) + "\n\n")
+        f.write("LLRs (deinterleaved):\n")
+        f.write(_floats_full(rx_out["llrs_deinterleaved"]) + "\n\n")
+        if rx_out["ldpc_bits"] is not None:
+            f.write("LDPC bits (post decode):\n")
+            f.write(_bits_full(rx_out["ldpc_bits"]) + "\n\n")
+        if rx_out["bch_payload"] is not None:
+            f.write("BCH payload (Kbch):\n")
+            f.write(_bits_full(rx_out["bch_payload"]) + "\n\n")
+        if rx_out["bbframe_padded"] is not None:
+            f.write("BBFRAME after descramble (Kbch):\n")
+            f.write(_bits_full(rx_out["bbframe_padded"]) + "\n\n")
+        if rx_out["df_bits"] is not None:
+            f.write("Recovered DF bits (full):\n")
+            f.write(_bits_full(rx_out["df_bits"]) + "\n\n")
+
+        f.write("============================================================\n")
+        f.write("FILES\n")
+        f.write("============================================================\n")
+        f.write("TX artifacts:\n")
         for k, v in tx_meta_paths.items():
             f.write(f"  {k:18s}: {v}\n")
-        f.write("\nRX files:\n")
+        f.write("\nRX artifacts:\n")
         for k, v in rx_meta_paths.items():
             if v:
                 f.write(f"  {k:18s}: {v}\n")
 
+    # Copy report to central reports folder with timestamp
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    shutil.copy(report_path, os.path.join(reports_dir, f"dvbs2x_report_{ts}.txt"))
+
     print("DVB-S2X TX->RX completed successfully.")
     print(f"Artifacts in: {out_dir}")
+    print(f"Report archived in: {reports_dir}")
 
 
 if __name__ == "__main__":

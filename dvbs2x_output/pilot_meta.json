@@ -1,0 +1,18 @@
+{
+  "S_slots": 90,
+  "fecframe": "short",
+  "payload_data_len": 8100,
+  "payload_with_pilots_len": 8280,
+  "pilot_block_len": 36,
+  "pilot_blocks": 5,
+  "pilot_slots_after": [
+    16,
+    32,
+    48,
+    64,
+    80
+  ],
+  "plframe_len_total": 8370,
+  "plheader_len": 90,
+  "slot_len": 90
+}

@@ -1,0 +1,55 @@
+DVB-S2X TX→RX Report
+====================
+Input bits file      : C:\Users\umair\Videos\JOB - NASTP\SATCOM\Code\GS_data\umair_gs_bits.csv
+Modulation           : QPSK
+Rate                 : 1/2
+FECFRAME             : short
+Pilots               : True
+Scrambling code      : 0
+DFL                  : 720
+LDPC MAT             : C:\Users\umair\Videos\JOB - NASTP\SATCOM\Code\s2xLDPCParityMatrices\dvbs2xLDPCParityMatrices.mat
+
+Lengths:
+DF bits              : 720
+BBFRAME              : 800
+BCH codeword         : 7200
+LDPC codeword        : 16200
+Interleaved bits     : 16200
+Payload symbols      : 8100
+PLFRAME symbols      : 8370
+
+RX stats:
+LDPC iterations      : 0
+LDPC syndrome wgt    : 0
+BCH corrected?       : False
+Recovered DF bits    : 720
+
+Result: PASS (DF match)
+
+TX files:
+  df_bits           : df_bits.txt
+  BBFRAME           : BBFRAME.txt
+  scrambled         : scrambled.txt
+  bch_codeword      : bch_codeword.txt
+  ldpc_codeword     : ldpc_codeword.txt
+  interleaved_bits  : interleaved_bits.txt
+  payload_symbols   : payload_symbols.txt
+  plh_symbols       : plh_symbols.txt
+  plframe_symbols   : plframe_symbols.txt
+
+RX files:
+  payload_corrected : payload_corrected.txt
+  payload_raw       : payload_raw.txt
+  pilots_extracted  : pilots_extracted.txt
+  phase_estimates   : phase_estimates.txt
+  llrs_interleaved  : llrs_interleaved.txt
+  llrs_deinterleaved: llrs_deinterleaved.txt
+  ldpc_bits_rx      : ldpc_bits_rx.txt
+  bch_payload_rx    : bch_payload_rx.txt
+  bbframe_padded_rx : bbframe_padded_rx.txt
+  df_bits_rx        : df_bits_rx.txt
+  pilot_meta        : pilot_meta.json
+  phase_meta        : phase_meta.json
+  demap_meta        : demap_meta.json
+  ldpc_meta         : ldpc_meta.json
+  df_meta           : df_meta.json

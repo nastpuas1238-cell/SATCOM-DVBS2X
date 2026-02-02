@@ -1,0 +1,91 @@
+DVB-S2X END-TO-END REPORT
+Generated on: 2026-01-30 14:52:32
+
+This report documents TX→RX processing from input bits to recovered DF.
+
+============================================================
+INPUT DATA
+============================================================
+Input CSV file : C:\Users\umair\Videos\JOB - NASTP\SATCOM\Code\GS_data\umair_gs_bits.csv
+Total bits     : 720
+First bits     : 01000111010101010100110101000001010010010101001001000111010101010100110101000001010010010101001001000111010101010100110101000001...
+
+============================================================
+BBHEADER (ETSI CLAUSE 5.1.6)
+============================================================
+Length : 80 bits
+Bits   : 00000000000000000000000000000000000000101101000000000000000000000000000010001011
+
+MATYPE-1 : 0x00
+UPL      : 0
+DFL      : 720
+SYNC     : 0x00
+SYNCD    : 0x0000
+
+============================================================
+DATA FIELD (MERGER/SLICER)
+============================================================
+DFL bits : 720
+DF bits  : 01000111010101010100110101000001010010010101001001000111010101010100110101000001010010010101001001000111010101010100110101000001...
+
+============================================================
+STREAM ADAPTATION + BCH + LDPC
+============================================================
+Kbch            : 7032
+Nbch            : 7200
+LDPC length     : 16200
+Scrambled (1st) : 00000001010100100000011111101100000100101011100001100001011100010100011110101100110101011000010000100011101001100010111100000001...
+BCH cw (1st)    : 00000001010100100000011111101100000100101011100001100001011100010100011110101100110101011000010000100011101001100010111100000001...
+LDPC cw (1st)   : 00000001010100100000011111101100000100101011100001100001011100010100011110101100110101011000010000100011101001100010111100000001...
+
+============================================================
+CONSTELLATION + PILOTS + PLFRAME
+============================================================
+Modulation      : QPSK
+Rate            : 1/2
+Pilots          : True
+Payload symbols : 8100
+First payload   : +0.707+0.707j, +0.707+0.707j, +0.707+0.707j, +0.707-0.707j, +0.707-0.707j, +0.707-0.707j, +0.707+0.707j, -0.707+0.707j
+PLHEADER symbols: 90
+PLFRAME symbols : 8370
+First PLFRAME   : +0.707+0.707j, +0.707-0.707j, -0.707-0.707j, -0.707+0.707j, +0.707+0.707j, -0.707+0.707j, -0.707-0.707j, +0.707-0.707j
+
+============================================================
+RECEIVER PIPELINE
+============================================================
+LDPC iterations : 0
+LDPC syndrome   : 0
+BCH corrected?  : False
+Recovered DF    : 720 bits
+DF match        : YES
+
+============================================================
+FILES
+============================================================
+TX artifacts:
+  df_bits           : df_bits.txt
+  BBFRAME           : BBFRAME.txt
+  scrambled         : scrambled.txt
+  bch_codeword      : bch_codeword.txt
+  ldpc_codeword     : ldpc_codeword.txt
+  interleaved_bits  : interleaved_bits.txt
+  payload_symbols   : payload_symbols.txt
+  plh_symbols       : plh_symbols.txt
+  plframe_symbols   : plframe_symbols.txt
+
+RX artifacts:
+  payload_corrected : payload_corrected.txt
+  payload_raw       : payload_raw.txt
+  pilots_extracted  : pilots_extracted.txt
+  phase_estimates   : phase_estimates.txt
+  llrs_interleaved  : llrs_interleaved.txt
+  llrs_deinterleaved: llrs_deinterleaved.txt
+  ldpc_bits_rx      : ldpc_bits_rx.txt
+  bch_payload_rx    : bch_payload_rx.txt
+  bbframe_padded_rx : bbframe_padded_rx.txt
+  df_bits_rx        : df_bits_rx.txt
+  pilot_meta        : pilot_meta.json
+  phase_meta        : phase_meta.json
+  demap_meta        : demap_meta.json
+  ldpc_meta         : ldpc_meta.json
+  df_meta           : df_meta.json

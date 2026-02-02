@@ -1,0 +1,7 @@
+{
+  "bits_per_symbol": 2,
+  "code_rate": "1/2",
+  "modulation": "QPSK",
+  "noise_var": 1e-06,
+  "symbols_in": 8100
+}
