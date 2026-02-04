@@ -41,6 +41,30 @@ def write_bits_single_line(path: str, bits: np.ndarray):
         f.write(bits_str + "\n")
 
 
+def save_intermediate(data, name: str, output_dir: str, frame_num: int, format_type: str = "text"):
+    """Save intermediate signal/data at each processing stage."""
+    os.makedirs(output_dir, exist_ok=True)
+    fname = os.path.join(output_dir, f"frame{frame_num}_{name}")
+    
+    if format_type == "bits":
+        bits_str = "".join(str(int(b)) for b in data.flatten())
+        with open(fname + ".txt", "w") as f:
+            f.write(bits_str)
+    elif format_type == "complex":
+        # Complex numbers (symbols, signals)
+        with open(fname + ".txt", "w") as f:
+            for val in data.flatten():
+                f.write(f"{val.real:+.8f} {val.imag:+.8f}\n")
+    elif format_type == "real":
+        # Real numbers (LLRs, etc.)
+        with open(fname + ".txt", "w") as f:
+            for val in data.flatten():
+                f.write(f"{val:+.8f}\n")
+    elif format_type == "json":
+        with open(fname + ".json", "w") as f:
+            json.dump(data, f, indent=2)
+
+
 def run_tx_rx_loopback(
     fecframe: str = "short",
     rate: str = "1/2",
@@ -50,6 +74,7 @@ def run_tx_rx_loopback(
     esn0_db: float | None = None,
     max_frames: int = 1,
     output_dir: str = "loopback_output",
+    detailed_report: bool = True,
 ) -> dict:
     """
     Run a complete TX→RX loopback test.
@@ -95,20 +120,33 @@ def run_tx_rx_loopback(
             "scrambling_code": scrambling_code,
             "esn0_db": esn0_db,
             "max_frames": max_frames,
+            "detailed_report": detailed_report,
         },
         "frames": []
     }
     
+    # Create intermediate output directory if detailed reporting enabled
+    intermediate_dir = os.path.join(output_dir, "intermediate") if detailed_report else None
+    
     # Process each frame
     for frame_num in range(1, max_frames + 1):
-        print(f"\n--- Frame {frame_num} ---")
+        print(f"\n{'='*70}")
+        print(f"FRAME {frame_num}")
+        print(f"{'='*70}")
         
         # =====================================================================
         # TX SIDE: Generate PLFRAME
         # =====================================================================
+        print("\n📤 TRANSMITTER CHAIN")
+        print("-" * 70)
         
         # Get TX input bits (for later comparison)
         tx_input_bits = in_bits[:DFL] if DFL > 0 else np.array([], dtype=np.uint8)
+        
+        if detailed_report:
+            save_intermediate(tx_input_bits, "01_tx_input_bits", intermediate_dir, frame_num, "bits")
+        
+        print(f"01. Input Bits         : {len(tx_input_bits)} bits")
         
         # Build BB header
         bbheader_bits = build_bbheader(
@@ -119,6 +157,7 @@ def run_tx_rx_loopback(
             sync=SYNC_BYTE,
             syncd=0
         )
+        print(f"02. BB Header          : {len(bbheader_bits)} bits")
         
         # Build BB frame (with padding)
         if len(tx_input_bits) > 0:
@@ -126,19 +165,50 @@ def run_tx_rx_loopback(
         else:
             bbframe = bbheader_bits
         
+        if detailed_report:
+            save_intermediate(bbframe, "02_bbframe", intermediate_dir, frame_num, "bits")
+        
+        print(f"03. BB Frame           : {len(bbframe)} bits (header {len(bbheader_bits)} + data {len(tx_input_bits)})")
+        
         adapted = stream_adaptation_rate(bbframe, fecframe, rate)
+        
+        if detailed_report:
+            save_intermediate(adapted, "03_adapted", intermediate_dir, frame_num, "bits")
+        
+        print(f"04. After Scrambling   : {len(adapted)} bits")
         
         # BCH encode
         bch_codeword = bch_encode_bbframe(adapted, fecframe, rate=rate)
         
+        if detailed_report:
+            save_intermediate(bch_codeword, "04_bch_codeword", intermediate_dir, frame_num, "bits")
+        
+        print(f"05. BCH Encoded        : {len(bch_codeword)} bits")
+        
         # LDPC encode
         ldpc_codeword = ldpc_encoder.encode(bch_codeword, fecframe, rate)
+        
+        if detailed_report:
+            save_intermediate(ldpc_codeword, "05_ldpc_codeword", intermediate_dir, frame_num, "bits")
+        
+        print(f"06. LDPC Encoded       : {len(ldpc_codeword)} bits")
         
         # Bit interleave
         interleaved = dvbs2_bit_interleave(ldpc_codeword, modulation)
         
+        if detailed_report:
+            save_intermediate(interleaved, "06_interleaved", intermediate_dir, frame_num, "bits")
+        
+        print(f"07. Bit Interleaved    : {len(interleaved)} bits")
+        
         # Constellation map
         symbols = dvbs2_constellation_map(interleaved, modulation)
+        
+        if detailed_report:
+            save_intermediate(symbols, "07_constellation_symbols", intermediate_dir, frame_num, "complex")
+        
+        print(f"08. Constellation Map  : {len(symbols)} symbols ({modulation})")
+        print(f"    Power (avg)        : {np.mean(np.abs(symbols)**2):.4f}")
         
         # Get MODCOD for PL header
         modcod = modcod_from_modulation_rate(modulation, rate)
@@ -146,36 +216,62 @@ def run_tx_rx_loopback(
         # Build PL header
         _, plh_syms = build_plheader(modcod, fecframe, pilots=pilots_on)
         
+        print(f"09. PL Header          : {len(plh_syms)} symbols")
+        
         # Insert pilots
         payload_with_pilots, _ = insert_pilots_into_payload(symbols, pilots_on=pilots_on, fecframe=fecframe)
+        
+        if detailed_report:
+            save_intermediate(payload_with_pilots, "08_with_pilots", intermediate_dir, frame_num, "complex")
+        
+        print(f"10. Payload+Pilots     : {len(payload_with_pilots)} symbols")
         
         # Concatenate PL header + payload with pilots
         plframe_tx = np.concatenate([plh_syms, payload_with_pilots])
         
+        if detailed_report:
+            save_intermediate(plframe_tx, "09_plframe_tx", intermediate_dir, frame_num, "complex")
+        
+        print(f"11. Full PLFRAME       : {len(plframe_tx)} symbols (header {len(plh_syms)} + payload {len(payload_with_pilots)})")
+        
         # PL scramble
         plframe_scrambled = pl_scramble_full_plframe(plframe_tx, scrambling_code=scrambling_code, plheader_len=len(plh_syms))
         
-        print(f"TX: Generated PLFRAME shape={plframe_scrambled.shape}, pilots={pilots_on}")
+        if detailed_report:
+            save_intermediate(plframe_scrambled, "10_plframe_scrambled", intermediate_dir, frame_num, "complex")
+        
+        print(f"12. PL Scrambled       : {len(plframe_scrambled)} symbols")
         
         # =====================================================================
         # CHANNEL SIMULATION: Add AWGN noise if specified
         # =====================================================================
+        print(f"\n📡 CHANNEL")
+        print("-" * 70)
         
         if esn0_db is not None:
-            # Power of QPSK symbols is 1
             signal_power = 1.0
             noise_power = signal_power / (10 ** (esn0_db / 10))
             noise = np.sqrt(noise_power / 2) * (np.random.randn(len(plframe_scrambled)) + 1j * np.random.randn(len(plframe_scrambled)))
             plframe_rx = plframe_scrambled + noise
-            print(f"Channel: Added AWGN, Es/N0={esn0_db} dB, noise_power={noise_power:.6f}")
+            snr_measured = 10 * np.log10(np.mean(np.abs(plframe_scrambled)**2) / np.mean(np.abs(noise)**2))
+            print(f"AWGN Channel")
+            print(f"  Es/N0 (target)       : {esn0_db:.1f} dB")
+            print(f"  Es/N0 (measured)     : {snr_measured:.2f} dB")
+            print(f"  Signal Power         : {np.mean(np.abs(plframe_scrambled)**2):.4f}")
+            print(f"  Noise Power          : {noise_power:.6f}")
         else:
             plframe_rx = plframe_scrambled
-            noise_power = 1e-10  # Very small noise for numerical stability
-            print("Channel: Noiseless (numerical noise_var=1e-10)")
+            noise_power = 1e-10
+            print(f"Noiseless Channel")
+        
+        if detailed_report:
+            save_intermediate(plframe_rx, "11_plframe_rx", intermediate_dir, frame_num, "complex")
         
         # =====================================================================
         # RX SIDE: Process received PLFRAME
         # =====================================================================
+        print(f"\n📥 RECEIVER CHAIN")
+        print("-" * 70)
         
         rx_output = process_rx_plframe(
             plframe_rx,
@@ -190,19 +286,49 @@ def run_tx_rx_loopback(
             decode_ldpc=True,
         )
         
+        # Extract and save intermediate RX outputs
+        if detailed_report:
+            if rx_output.get("descrambled") is not None:
+                save_intermediate(rx_output["descrambled"], "12_descrambled", intermediate_dir, frame_num, "complex")
+            if rx_output.get("payload_raw") is not None:
+                save_intermediate(rx_output["payload_raw"], "13_payload_raw", intermediate_dir, frame_num, "complex")
+            if rx_output.get("payload_corrected") is not None:
+                save_intermediate(rx_output["payload_corrected"], "14_payload_corrected", intermediate_dir, frame_num, "complex")
+            if rx_output.get("llrs_interleaved") is not None:
+                save_intermediate(rx_output["llrs_interleaved"], "15_llrs_interleaved", intermediate_dir, frame_num, "real")
+            if rx_output.get("llrs_deinterleaved") is not None:
+                save_intermediate(rx_output["llrs_deinterleaved"], "16_llrs_deinterleaved", intermediate_dir, frame_num, "real")
+            if rx_output.get("ldpc_bits") is not None:
+                save_intermediate(rx_output["ldpc_bits"], "17_ldpc_decoded", intermediate_dir, frame_num, "bits")
+            if rx_output.get("bch_payload") is not None:
+                save_intermediate(rx_output["bch_payload"], "18_bch_decoded", intermediate_dir, frame_num, "bits")
+            if rx_output.get("df_bits") is not None:
+                save_intermediate(rx_output["df_bits"], "19_df_bits", intermediate_dir, frame_num, "bits")
+        
+        print(f"01. Descrambled        : {len(rx_output.get('descrambled', []))} symbols")
+        print(f"02. Pilot Removed      : {len(rx_output.get('payload_raw', []))} symbols")
+        print(f"03. Phase Corrected    : {len(rx_output.get('payload_corrected', []))} symbols")
+        print(f"04. Demapped (LLRs)    : {len(rx_output.get('llrs_interleaved', []))} values")
+        print(f"05. Deinterleaved      : {len(rx_output.get('llrs_deinterleaved', []))} values")
+        print(f"06. LDPC Decoded       : {len(rx_output.get('ldpc_bits', []))} bits")
+        print(f"07. BCH Decoded        : {len(rx_output.get('bch_payload', []))} bits")
+        print(f"08. Final DF Bits      : {len(rx_output.get('df_bits', []))} bits")
+        
         # =====================================================================
         # EVALUATE RESULTS
         # =====================================================================
+        print(f"\n📊 PERFORMANCE ANALYSIS")
+        print("-" * 70)
         
         rx_df_bits = rx_output.get("df_bits")
         
         frame_stats = {
             "frame_num": frame_num,
-            "tx_bits_shape": tx_input_bits.shape,
+            "tx_bits_shape": list(tx_input_bits.shape),
+            "intermediate_saved": detailed_report,
         }
         
         if rx_df_bits is not None:
-            # Compare TX input with RX output
             min_len = min(len(tx_input_bits), len(rx_df_bits))
             tx_cropped = tx_input_bits[:min_len]
             rx_cropped = rx_df_bits[:min_len]
@@ -212,24 +338,36 @@ def run_tx_rx_loopback(
             success = errors == 0
             
             frame_stats.update({
-                "rx_bits_shape": rx_df_bits.shape,
-                "bits_compared": min_len,
+                "rx_bits_shape": list(rx_df_bits.shape),
+                "bits_compared": int(min_len),
                 "bit_errors": int(errors),
                 "ber": float(ber),
                 "frame_success": bool(success),
             })
             
-            print(f"RX: Decoded {len(rx_df_bits)} bits")
-            print(f"    Bit Errors: {errors}/{min_len}")
-            print(f"    BER: {ber:.6e}")
-            print(f"    Frame Success: {success}")
+            print(f"Bits Compared          : {min_len}")
+            print(f"Bit Errors             : {errors}/{min_len}")
+            print(f"BER                    : {ber:.6e}")
+            print(f"Frame Success          : {'✅ YES' if success else '❌ NO'}")
+            
+            # Add LDPC metrics if available
+            if rx_output.get("ldpc_meta") is not None:
+                ldpc_meta = rx_output["ldpc_meta"]
+                if "iterations" in ldpc_meta:
+                    print(f"LDPC Iterations        : {ldpc_meta['iterations']}")
+            
+            # Add phase estimation metrics
+            if rx_output.get("phase_meta") is not None:
+                phase_meta = rx_output["phase_meta"]
+                if "phase_estimate" in phase_meta:
+                    print(f"Phase Error Estimate   : {phase_meta.get('phase_estimate', 0):.4f} rad")
         else:
             frame_stats["error"] = "RX decoding failed"
-            print("RX: Decoding FAILED")
+            print("❌ RX Decoding FAILED")
         
         stats["frames"].append(frame_stats)
         
-        # Save artifacts
+        # Save frame-specific output
         write_bits_single_line(
             os.path.join(output_dir, f"tx_bits_frame{frame_num}.txt"),
             tx_input_bits
@@ -280,7 +418,7 @@ def run_tx_rx_loopback(
 if __name__ == "__main__":
     import argparse
     
-    parser = argparse.ArgumentParser(description="TX→RX Loopback Test")
+    parser = argparse.ArgumentParser(description="TX→RX Loopback Test with Detailed Reporting")
     parser.add_argument("--fecframe", default="short", help="normal or short")
     parser.add_argument("--rate", default="1/2", help="Code rate")
     parser.add_argument("--modulation", default="QPSK", help="Modulation scheme")
@@ -289,6 +427,7 @@ if __name__ == "__main__":
     parser.add_argument("--esn0-db", type=float, default=None, help="Es/N0 in dB (None for noiseless)")
     parser.add_argument("--max-frames", type=int, default=3, help="Number of frames")
     parser.add_argument("--output-dir", default=None, help="Output directory (default: results/loopback)")
+    parser.add_argument("--no-detailed", action="store_true", help="Disable detailed stage reporting")
     
     args = parser.parse_args()
     
@@ -304,4 +443,5 @@ if __name__ == "__main__":
         esn0_db=args.esn0_db,
         max_frames=args.max_frames,
         output_dir=output_dir,
+        detailed_report=not args.no_detailed,
     )
