@@ -14,6 +14,13 @@ import sys
 import numpy as np
 import json
 from datetime import datetime
+try:
+    import matplotlib.pyplot as plt
+    import matplotlib
+    matplotlib.use('Agg')  # Non-interactive backend
+    MATPLOTLIB_AVAILABLE = True
+except ImportError:
+    MATPLOTLIB_AVAILABLE = False
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 if ROOT not in sys.path:
@@ -39,6 +46,32 @@ def write_bits_single_line(path: str, bits: np.ndarray):
     bits_str = " ".join(str(int(b)) for b in bits.flatten())
     with open(path, "w") as f:
         f.write(bits_str + "\n")
+
+
+def plot_constellation(symbols: np.ndarray, title: str, output_path: str):
+    """Plot constellation diagram."""
+    if not MATPLOTLIB_AVAILABLE:
+        return
+    
+    try:
+        plt.figure(figsize=(8, 8))
+        plt.scatter(symbols.real, symbols.imag, alpha=0.6, s=20)
+        plt.axis('equal')
+        plt.grid(True, alpha=0.3)
+        plt.xlabel('In-phase (I)', fontsize=11)
+        plt.ylabel('Quadrature (Q)', fontsize=11)
+        plt.title(title, fontsize=12, fontweight='bold')
+        
+        # Add power annotation
+        power = np.mean(np.abs(symbols)**2)
+        plt.text(0.02, 0.98, f'Power: {power:.4f}', transform=plt.gca().transAxes,
+                verticalalignment='top', fontsize=10, bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+        
+        plt.tight_layout()
+        plt.savefig(output_path, dpi=100, bbox_inches='tight')
+        plt.close()
+    except Exception as e:
+        print(f"Warning: Could not plot constellation: {e}")
 
 
 def save_intermediate(data, name: str, output_dir: str, frame_num: int, format_type: str = "text"):
@@ -206,6 +239,12 @@ def run_tx_rx_loopback(
         
         if detailed_report:
             save_intermediate(symbols, "07_constellation_symbols", intermediate_dir, frame_num, "complex")
+            # Plot constellation
+            plot_constellation(
+                symbols,
+                f"TX Constellation (Frame {frame_num}, {modulation})",
+                os.path.join(intermediate_dir, f"frame{frame_num}_07_constellation.png")
+            )
         
         print(f"08. Constellation Map  : {len(symbols)} symbols ({modulation})")
         print(f"    Power (avg)        : {np.mean(np.abs(symbols)**2):.4f}")
@@ -239,6 +278,12 @@ def run_tx_rx_loopback(
         
         if detailed_report:
             save_intermediate(plframe_scrambled, "10_plframe_scrambled", intermediate_dir, frame_num, "complex")
+            # Plot final TX constellation with pilots
+            plot_constellation(
+                plframe_scrambled,
+                f"TX PLFRAME with Pilots (Frame {frame_num}, after scrambling)",
+                os.path.join(intermediate_dir, f"frame{frame_num}_10_plframe_tx.png")
+            )
         
         print(f"12. PL Scrambled       : {len(plframe_scrambled)} symbols")
         
@@ -266,6 +311,12 @@ def run_tx_rx_loopback(
         
         if detailed_report:
             save_intermediate(plframe_rx, "11_plframe_rx", intermediate_dir, frame_num, "complex")
+            # Plot RX constellation (with noise)
+            plot_constellation(
+                plframe_rx,
+                f"RX PLFRAME (Frame {frame_num}, after channel, SNR={esn0_db if esn0_db is not None else 'inf'} dB)",
+                os.path.join(intermediate_dir, f"frame{frame_num}_11_plframe_rx.png")
+            )
         
         # =====================================================================
         # RX SIDE: Process received PLFRAME
@@ -328,25 +379,26 @@ def run_tx_rx_loopback(
             "intermediate_saved": detailed_report,
         }
         
-        if rx_df_bits is not None:
-            min_len = min(len(tx_input_bits), len(rx_df_bits))
-            tx_cropped = tx_input_bits[:min_len]
-            rx_cropped = rx_df_bits[:min_len]
+            # Compare bits - only compare the actual user data (DFL bits), not padded frame
+            # tx_input_bits is DFL (720), rx_df_bits includes padding (1000)
+            bits_to_compare = len(tx_input_bits)  # Compare only the DFL bits
+            tx_cropped = tx_input_bits[:bits_to_compare]
+            rx_cropped = rx_df_bits[:bits_to_compare]  # Extract only first DFL bits from RX
             
             errors = np.sum(tx_cropped != rx_cropped)
-            ber = errors / min_len if min_len > 0 else 1.0
+            ber = errors / bits_to_compare if bits_to_compare > 0 else 1.0
             success = errors == 0
             
             frame_stats.update({
                 "rx_bits_shape": list(rx_df_bits.shape),
-                "bits_compared": int(min_len),
+                "bits_compared": int(bits_to_compare),
                 "bit_errors": int(errors),
                 "ber": float(ber),
                 "frame_success": bool(success),
             })
             
-            print(f"Bits Compared          : {min_len}")
-            print(f"Bit Errors             : {errors}/{min_len}")
+            print(f"Bits Compared          : {bits_to_compare} (user data only)")
+            print(f"Bit Errors             : {errors}/{bits_to_compare}")
             print(f"BER                    : {ber:.6e}")
             print(f"Frame Success          : {'✅ YES' if success else '❌ NO'}")
             
