@@ -1,8 +1,10 @@
     
 """
+RX Chain: Steps 12-19 - Orchestrator
+
 DVB-S2 receiver chain (partial): PL descramble -> pilot removal -> pilot-based
-common phase correction. Downstream stages (demapper, deinterleaver, LDPC/BCH)
-to be added next.
+common phase correction. Downstream stages (demapper, deinterleave, LDPC/BCH)
+are orchestrated here (stages 12..19).
 """
 
 from __future__ import annotations
@@ -88,9 +90,9 @@ def process_rx_plframe(
 
     if decode_ldpc:
         # Step 6: LDPC decode
-        mat_path = ldpc_mat_path or (
-            r"C:\Users\umair\Videos\JOB - NASTP\SATCOM\Code\s2xLDPCParityMatrices\dvbs2xLDPCParityMatrices.mat"
-        )
+        if ldpc_mat_path is None:
+            ldpc_mat_path = os.path.join(ROOT, "config", "ldpc_matrices", "dvbs2xLDPCParityMatrices.mat")
+        mat_path = ldpc_mat_path
         ldpc_dec = DVB_LDPC_Decoder(mat_path)
         ldpc_bits, ldpc_meta = ldpc_dec.decode(
             llrs_deint,

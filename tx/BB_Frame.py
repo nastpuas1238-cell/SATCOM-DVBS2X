@@ -1,3 +1,4 @@
+# Stage 02 - BB Frame - BB header & frame build
 print("\n========== SCRIPT START ==========\n")
 
 import os
@@ -450,9 +451,10 @@ def dvbs2_bbframe_generator_from_bits_csv(bits_csv_path: str, max_frames: int = 
 
 if __name__ == "__main__":
     # Put your CSV here. Absolute path works, or use a relative path like:
-    # "GS_data/umair_gs_bits.csv" if the file is in a folder next to this script.
+    # "data/GS_data/umair_gs_bits.csv" if the file is in a folder next to this script.
+    bits_csv_path = os.path.join(ROOT, "data", "GS_data", "umair_gs_bits.csv")
     dvbs2_bbframe_generator_from_bits_csv(
-        bits_csv_path=r"C:\Users\umair\Videos\JOB - NASTP\SATCOM\Code\GS_data\umair_gs_bits.csv",
+        bits_csv_path=bits_csv_path,
         max_frames=10
         
     )
