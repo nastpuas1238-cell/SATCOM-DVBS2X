@@ -288,7 +288,7 @@ def test_bch_encode_length_and_parity():
 # ============================================================
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-MAT_PATH = os.path.join(ROOT, "s2xLDPCParityMatrices", "dvbs2xLDPCParityMatrices.mat")
+MAT_PATH = os.path.join(ROOT, "config", "ldpc_matrices", "dvbs2xLDPCParityMatrices.mat")
 
 def test_ldpc_encoder_initialization():
     """Test LDPC encoder can be initialized with MAT file."""

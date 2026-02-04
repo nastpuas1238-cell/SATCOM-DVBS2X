@@ -15,7 +15,7 @@ import numpy as np
 import json
 from datetime import datetime
 
-ROOT = os.path.abspath(os.path.dirname(__file__))
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
@@ -77,11 +77,11 @@ def run_tx_rx_loopback(
     SYNC_BYTE = 0x47
     
     # Get CSV path
-    csv_path = resolve_input_path(os.path.join(ROOT, "GS_data", "umair_gs_bits.csv"))
+    csv_path = resolve_input_path(os.path.join(ROOT, "data", "GS_data", "umair_gs_bits.csv"))
     in_bits = load_bits_csv(csv_path)
     
     # Get LDPC encoder
-    mat_path = os.path.join(ROOT, "s2xLDPCParityMatrices", "dvbs2xLDPCParityMatrices.mat")
+    mat_path = os.path.join(ROOT, "config", "ldpc_matrices", "dvbs2xLDPCParityMatrices.mat")
     ldpc_encoder = DVB_LDPC_Encoder(mat_path)
     
     # Statistics
@@ -288,9 +288,12 @@ if __name__ == "__main__":
     parser.add_argument("--scrambling-code", type=int, default=0, help="PL scrambling code")
     parser.add_argument("--esn0-db", type=float, default=None, help="Es/N0 in dB (None for noiseless)")
     parser.add_argument("--max-frames", type=int, default=3, help="Number of frames")
-    parser.add_argument("--output-dir", default="loopback_output", help="Output directory")
+    parser.add_argument("--output-dir", default=None, help="Output directory (default: results/loopback)")
     
     args = parser.parse_args()
+    
+    # Default output directory
+    output_dir = args.output_dir or os.path.join(ROOT, "results", "loopback")
     
     stats = run_tx_rx_loopback(
         fecframe=args.fecframe,
@@ -300,5 +303,5 @@ if __name__ == "__main__":
         scrambling_code=args.scrambling_code,
         esn0_db=args.esn0_db,
         max_frames=args.max_frames,
-        output_dir=args.output_dir,
+        output_dir=output_dir,
     )

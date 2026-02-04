@@ -450,8 +450,8 @@ def dvbs2_bbframe_generator_from_bits_csv(bits_csv_path: str, max_frames: int = 
 
 if __name__ == "__main__":
     # Put your CSV here. Absolute path works, or use a relative path like:
-    # "GS_data/umair_gs_bits.csv" if the file is in a folder next to this script.
-    bits_csv_path = os.path.join(ROOT, "GS_data", "umair_gs_bits.csv")
+    # "data/GS_data/umair_gs_bits.csv" if the file is in a folder next to this script.
+    bits_csv_path = os.path.join(ROOT, "data", "GS_data", "umair_gs_bits.csv")
     dvbs2_bbframe_generator_from_bits_csv(
         bits_csv_path=bits_csv_path,
         max_frames=10
