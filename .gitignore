@@ -8,11 +8,11 @@ __pycache__/
 .vscode/
 .idea/
 
-# Results / outputs
+# Outputs
 results/
 loopback_output/
-*.png
 intermediate/
+*.png
 *.log
 
 # OS

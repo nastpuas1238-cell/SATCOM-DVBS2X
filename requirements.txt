@@ -1,5 +1,5 @@
 numpy
-matplotlib
 scipy
+matplotlib
 pytest
 flake8
