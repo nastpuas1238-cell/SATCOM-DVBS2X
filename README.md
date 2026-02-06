@@ -18,3 +18,7 @@ Repository layout
 - docs/, examples/, results/
 
 Contributing, CI and usage examples are in the repo. License: MIT.
+
+## Topics / Tags
+
+satellite DVB-S2 DVB-S2X digital-communications signal-processing sdr python communications telemetry embedded ham-radio machine-learning tutorial beginner-friendly research education opensource awesome good-first-issue hacktoberfest
